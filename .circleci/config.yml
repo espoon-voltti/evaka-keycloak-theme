@@ -1,0 +1,115 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@4.1.3
+
+aliases:
+  - &remote_docker_version "19.03.13"
+
+parameters:
+  ecr:
+    type: string
+    default: 307238562370.dkr.ecr.eu-west-1.amazonaws.com
+  docker_image_name:
+    type: string
+    default: evaka/keycloak-theme
+
+executors:
+  aws-docker:
+    docker:
+      - image: << pipeline.parameters.ecr >>/voltti/builder-aws:docker-bullseye-slim-2c4fed445acf4350d5e75ca8d84f8d664903db95
+
+commands:
+  # Must be the last step in a job
+  notify_slack:
+    description: "Notify via Slack"
+    steps:
+      - slack/notify:
+          branch_pattern: master
+          channel: ci
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": { "type": "mrkdwn", "text": ":red_circle: Job *${CIRCLE_JOB}* has failed" },
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Project*:\n${CIRCLE_PROJECT_REPONAME}" },
+                    { "type": "mrkdwn", "text": "*Commiter*:\n${CIRCLE_USERNAME}" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Job" },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+jobs:
+  build:
+    executor: aws-docker
+    steps:
+      - setup_remote_docker:
+          version: *remote_docker_version
+      - run:
+          name: Docker login to ECR
+          command: ecr-login
+      - checkout
+      - run:
+          name: Build docker image
+          command: |
+            export DOCKER_IMAGE_NAME="<< pipeline.parameters.docker_image_name >>"
+            docker build -t "$DOCKER_IMAGE_NAME" .
+            ecr-push "${DOCKER_IMAGE_NAME}" "<< pipeline.parameters.ecr >>"
+      - notify_slack
+
+  publish: # Note: This expects that commit that tag points to has been build.
+    executor: aws-docker
+    steps:
+      - run:
+          name: Sanity check
+          command: |
+            if test -z "$CIRCLE_TAG" || ! [[ $CIRCLE_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9-]+)?$ ]]; then
+              echo "Invalid or missing tag: $CIRCLE_TAG"
+              exit 1
+            fi
+      - setup_remote_docker:
+          version: *remote_docker_version
+      - run:
+          name: Docker login to ECR
+          command: ecr-login
+      - run:
+          name: Tag image
+          command: |
+            export DOCKER_IMAGE_NAME="<< pipeline.parameters.docker_image_name >>"
+            export FULL_DOCKER_IMAGE_NAME="<< pipeline.parameters.ecr >>/${DOCKER_IMAGE_NAME}"
+
+            docker pull "${FULL_DOCKER_IMAGE_NAME}:${CIRCLE_SHA1}"
+            docker tag "${FULL_DOCKER_IMAGE_NAME}:${CIRCLE_SHA1}" "${FULL_DOCKER_IMAGE_NAME}:${CIRCLE_TAG}"
+            docker push "${FULL_DOCKER_IMAGE_NAME}:${CIRCLE_TAG}"
+      - notify_slack
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build:
+          context:
+            - org-global
+            - voltti-slack
+      - publish:
+          context:
+            - org-global
+            - voltti-slack
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9-]+)?$/
+            branches:
+              ignore: /.*/
