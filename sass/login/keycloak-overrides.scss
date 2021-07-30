@@ -31,7 +31,7 @@ $card-padding-tablet: $spacing-layout-xxl;
 
 // Ignore top padding on mobile views.
 .login-pf-page {
-  @media (max-width: $breakpoint-tablet) {
+  @media (max-width: #{$breakpoint-tablet - 1}) {
     padding-top: 0;
   }
 }
