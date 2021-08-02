@@ -1,7 +1,7 @@
 @import "../theme";
 @import "../shared/custom";
 
-$card-padding-mobile: $spacing-layout-xxl;
+$card-padding-mobile: $spacing-layout-l;
 $card-padding-tablet: $spacing-layout-xxl;
 
 // Override the default background image with a solid color
@@ -14,21 +14,24 @@ $card-padding-tablet: $spacing-layout-xxl;
 
 // Use correct typography for page title
 #kc-page-title {
-  margin-top: 0;
-  margin-bottom: $spacing-layout-xs;
+  margin: 0;
   font-family: $font-base;
-  font-size: $fontsize-h-1;
+  font-size: $fontsize-h-3;
   text-align: unset;
   font-style: normal;
   font-weight: 300;
   line-height: 30px;
   color: $color-primary-dark;
   hyphens: manual;
+
+  @media (min-width: $breakpoint-tablet) {
+    font-size: $fontsize-h-1;
+  }
 }
 
 // Ignore top padding on mobile views.
 .login-pf-page {
-  @media (max-width: $breakpoint-tablet) {
+  @media (max-width: #{$breakpoint-tablet - 1}) {
     padding-top: 0;
   }
 }
@@ -143,11 +146,6 @@ $card-padding-tablet: $spacing-layout-xxl;
   position: absolute;
   top: 24px;
   right: 24px;
-
-  @media (min-width: $breakpoint-tablet) {
-    top: 24px;
-    right: 24px;
-  }
 }
 
 #kc-form-wrapper {

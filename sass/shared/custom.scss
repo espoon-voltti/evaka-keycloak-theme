@@ -115,24 +115,32 @@ a {
 }
 
 .evaka-logo {
-  width: 300px;
+  max-width: 300px;
+  min-width: 0px;
   margin: 4px auto 56px;
 }
 
 .espoo-logo {
-  position: relative;
-  top: -10px;
-  left: -30px;
-  max-width: 157px;
+  max-width: 108px;
+  margin-bottom: -8px;
+  margin-left: -8px;
+
+  @media (min-width: $breakpoint-tablet) {
+    max-width: 157px;
+    margin-bottom: -14px;
+    margin-left: -14px;
+  }
 }
 
 .espoo-logo-divider {
   width: 1px;
-  height: 32px;
-  position: relative;
-  left: -18px;
-  margin-right: 4px;
+  height: 24px;
+  margin: 0 12px;
   border-left: 1px solid $color-gray-medium;
+
+  @media (min-width: $breakpoint-tablet) {
+    height: 32px;
+  }
 }
 
 .evaka-info-text {
@@ -222,7 +230,9 @@ a {
   display: flex;
   width: 100%;
   flex-direction: row;
-  align-items: center;
+  justify-content: center;
+  align-items: flex-end;
+  margin-bottom: 16px;
 }
 
 .flex {
