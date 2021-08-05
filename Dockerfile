@@ -1,4 +1,4 @@
-FROM node:14.15 AS builder-theme
+FROM node:16 AS builder-theme
 
 WORKDIR /work
 
